@@ -248,7 +248,7 @@ const empty = (t,s) => `<div style="text-align:center;padding:48px 20px;color:va
 /* ===== STORAGE ===== */
 /* ===== SUPABASE CONFIG ===== */
 const SB_URL = 'https://zuicbbzwlttccafngfhq.supabase.co';
-const SB_KEY = 'sb_publishable_Dnmm7W2qqrNTlCm13Rp1Pg_Qg4UmKbSiLMCaZ9c4lE';
+const SB_KEY = 'sb_publishable_Dnmm7W2qqrNTlCm13Rp1Pg_Qg4UmdCM';
 const sbHeaders = {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
 
 async function sbGet(table){
@@ -280,10 +280,19 @@ async function sbDeleteAll(table){
   }catch(e){console.error('sbDeleteAll',table,e);return false;}
 }
 
-const saveContacts = async () => { await sbDeleteAll('contacts'); if(S.contacts.length) await sbUpsert('contacts',S.contacts); };
-const saveTasks    = async () => { await sbDeleteAll('tasks');    if(S.tasks.length)    await sbUpsert('tasks',S.tasks); };
-const saveTeam     = async () => { await sbDeleteAll('team');     if(S.team.length)     await sbUpsert('team',S.team); };
-const saveUser     = () => localStorage.setItem('crm-userid',S.userId||'');
+const saveContacts = async () => {
+  await sbDeleteAll('contacts');
+  if(S.contacts.length) await sbUpsert('contacts', S.contacts.map(c=>({id:c.id, data:c})));
+};
+const saveTasks = async () => {
+  await sbDeleteAll('tasks');
+  if(S.tasks.length) await sbUpsert('tasks', S.tasks.map(t=>({id:t.id, data:t})));
+};
+const saveTeam = async () => {
+  await sbDeleteAll('team');
+  if(S.team.length) await sbUpsert('team', S.team.map(m=>({id:m.id, data:m})));
+};
+const saveUser = () => localStorage.setItem('crm-userid', S.userId||'');
 
 /* ===== TOAST / MODAL ===== */
 function toast(msg,type){
@@ -956,7 +965,9 @@ async function init(){
   document.getElementById('onboard-root').innerHTML=`<div class="onboard-overlay"><div style="text-align:center;color:var(--muted);"><div style="font-size:18px;margin-bottom:8px;">⏳</div>Connexion à la base de données...</div></div>`;
   try{
     const [contacts,tasks,team]=await Promise.all([sbGet('contacts'),sbGet('tasks'),sbGet('team')]);
-    S.contacts=contacts||[]; S.tasks=tasks||[]; S.team=team||[];
+    S.contacts=(contacts||[]).map(r=>r.data);
+    S.tasks=(tasks||[]).map(r=>r.data);
+    S.team=(team||[]).map(r=>r.data);
     S.userId=localStorage.getItem('crm-userid')||(S.team[0]&&S.team[0].id)||null;
   }catch(e){
     console.error(e); toast('Erreur de connexion à Supabase','err');
