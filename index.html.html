@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM — Suivi commercial · Diagnostics Immobiliers</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14213D; --paper:#F1F3F0; --surface:#FFF; --line:#DDE2DE;
+  --accent:#FF5A1F; --accent-dim:#FFE4D6;
+  --good:#1B8A5A; --good-dim:#DCEFE3;
+  --warn:#D6A019; --warn-dim:#FBF0D6;
+  --danger:#D6432F; --danger-dim:#FBE0DB;
+  --pause:#6B7785; --pause-dim:#EAECEE;
+  --text:#1B2630; --muted:#6B7785;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;} html,body{height:100%;margin:0;}
+body{font-family:var(--sans);background:var(--paper);color:var(--text);-webkit-font-smoothing:antialiased;}
+button,input,select,textarea{font-family:inherit;}
+::-webkit-scrollbar{height:6px;width:6px;}
+::-webkit-scrollbar-thumb{background:#C7CDC9;border-radius:3px;}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+/* ---------- Layout ---------- */
+#app{display:flex;min-height:100vh;}
+.sidebar{width:224px;flex-shrink:0;background:var(--ink);color:#E8EBF0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+  background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent 24px),
+  repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent 24px);}
+.sidebar-brand{padding:22px 18px 16px;}
+.sidebar-brand .mark{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;}
+.sidebar-brand .name{font-weight:700;font-size:16px;margin-top:4px;line-height:1.3;}
+.sidebar-nav{flex:1;padding:6px 10px;display:flex;flex-direction:column;gap:2px;}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:6px;color:#AEB7C5;cursor:pointer;font-size:13.5px;font-weight:500;border-left:3px solid transparent;background:none;border-top:none;border-right:none;border-bottom:none;text-align:left;width:100%;transition:background .12s,color .12s;}
+.nav-btn:hover{background:rgba(255,255,255,.07);color:#fff;}
+.nav-btn.active{background:rgba(255,90,31,.15);color:#fff;border-left-color:var(--accent);}
+.nav-btn svg{flex-shrink:0;width:17px;height:17px;}
+.sidebar-foot{padding:12px 18px 18px;font-size:11px;color:#5E6878;border-top:1px solid rgba(255,255,255,.08);}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 26px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;flex-wrap:wrap;gap:8px;}
+.topbar h1{font-size:19px;margin:0;font-weight:700;}
+.topbar .sub{font-size:12.5px;color:var(--muted);margin-top:2px;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.content{padding:22px 26px 60px;flex:1;}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 13px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:filter .12s;}
+.btn-primary{background:var(--accent);color:#fff;} .btn-primary:hover{filter:brightness(1.07);}
+.btn-secondary{background:#fff;border-color:var(--line);color:var(--text);} .btn-secondary:hover{border-color:#b0b8b2;}
+.btn-ghost{background:transparent;color:var(--muted);} .btn-ghost:hover{color:var(--text);background:rgba(0,0,0,.05);}
+.btn-sm{padding:5px 9px;font-size:12px;}
+
+/* ---------- Form ---------- */
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.field label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+input[type=text],input[type=email],input[type=tel],input[type=date],select,textarea{
+  padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13.5px;background:#fff;color:var(--text);width:100%;}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);}
+textarea{resize:vertical;min-height:72px;}
+.form-2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;}
+.form-2 .field.full{grid-column:1/-1;}
+.section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:16px 0 8px;border-bottom:1px solid var(--line);padding-bottom:5px;}
+
+/* ---------- Pills / Status ---------- */
+.pill{display:inline-flex;align-items:center;padding:3px 9px;border-radius:100px;font-size:11px;font-weight:700;}
+.s-interesse{background:var(--good-dim);color:var(--good);}
+.s-non_interesse{background:var(--danger-dim);color:var(--danger);}
+.s-perdu{background:#EEE;color:#888;}
+.s-en_pause{background:var(--warn-dim);color:var(--warn);}
+.s-default{background:var(--paper);color:var(--muted);}
+
+/* ---------- Avatar ---------- */
+.avatar{border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-family:var(--mono);flex-shrink:0;}
+
+/* ---------- Table ---------- */
+.table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+.table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:9px 13px;background:var(--paper);border-bottom:1px solid var(--line);}
+.table td{padding:11px 13px;border-bottom:1px solid var(--line);font-size:13px;}
+.table tr:last-child td{border-bottom:none;}
+.table tr.row:hover{background:rgba(0,0,0,.025);cursor:pointer;}
+
+/* ---------- Kanban ---------- */
+/* ---------- Calendrier ---------- */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.cal-month{font-size:18px;font-weight:700;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+.cal-day-label{text-align:center;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding-bottom:6px;}
+.cal-cell{min-height:90px;background:#fff;border:1px solid var(--line);border-radius:7px;padding:6px 7px;cursor:pointer;transition:border-color .12s;}
+.cal-cell:hover{border-color:var(--accent);}
+.cal-cell.empty{background:transparent;border-color:transparent;cursor:default;}
+.cal-cell.today{border-color:var(--accent);background:var(--accent-dim);}
+.cal-cell.has-relance{border-color:#E0A640;}
+.cal-cell.today.has-relance{border-color:var(--accent);}
+.cal-day-num{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;font-family:var(--mono);}
+.cal-cell.today .cal-day-num{color:var(--accent);}
+.cal-chip{font-size:10.5px;font-weight:600;background:var(--warn-dim);color:#7A5C00;border-radius:4px;padding:2px 5px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+.cal-chip:hover{background:#F5D580;}
+.cal-chip.overdue{background:var(--danger-dim);color:var(--danger);}
+.cal-more{font-size:10px;color:var(--muted);font-weight:600;margin-top:2px;}
+/* Liste du jour */
+.day-relance-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:7px;margin-bottom:7px;cursor:pointer;}
+.day-relance-item:hover{border-color:var(--accent);}
+
+
+/* ---------- Task ---------- */
+.task-row{display:flex;align-items:center;gap:10px;padding:9px 11px;background:#fff;border:1px solid var(--line);border-radius:7px;margin-bottom:7px;}
+.task-row.done{opacity:.5;}
+.task-row .t-title{flex:1;font-size:13px;}
+.task-row.done .t-title{text-decoration:line-through;}
+.t-cb{width:16px;height:16px;cursor:pointer;flex-shrink:0;}
+.t-due{font-size:11px;font-family:var(--mono);padding:3px 7px;border-radius:5px;white-space:nowrap;}
+.t-due.over{background:var(--danger-dim);color:var(--danger);}
+.t-due.today{background:var(--warn-dim);color:#9A7400;}
+.t-due.soon{background:var(--paper);color:var(--muted);}
+
+/* ---------- KPI ---------- */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.kpi-card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;}
+.kpi-card .kl{font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+.kpi-card .kv{font-size:24px;font-weight:700;margin-top:5px;font-family:var(--mono);}
+
+/* ---------- Panel ---------- */
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:20px;}
+.panel-title{font-weight:700;font-size:13.5px;margin-bottom:10px;}
+
+/* ---------- Detail log ---------- */
+.detail-item{padding:10px 0;border-bottom:1px solid var(--line);}
+.detail-item:last-child{border-bottom:none;}
+.detail-meta{font-size:10.5px;color:var(--muted);font-family:var(--mono);margin-bottom:3px;display:flex;align-items:center;gap:8px;}
+.detail-badge{display:inline-flex;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700;background:var(--paper);border:1px solid var(--line);}
+.detail-desc{font-size:13px;}
+
+/* ---------- Modal ---------- */
+.overlay{position:fixed;inset:0;background:rgba(20,33,61,.42);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;}
+.modal{background:#fff;border-radius:10px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.22);}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:2;}
+.modal-body{padding:20px;}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--line);position:sticky;bottom:0;background:#fff;}
+
+/* ---------- Toast ---------- */
+#toast-root{position:fixed;bottom:18px;right:18px;z-index:200;display:flex;flex-direction:column;gap:7px;}
+.toast{background:var(--ink);color:#fff;padding:9px 14px;border-radius:7px;font-size:13px;box-shadow:0 8px 20px rgba(0,0,0,.18);}
+.toast.ok{background:var(--good);} .toast.err{background:var(--danger);}
+
+/* ---------- Address autocomplete ---------- */
+.addr-wrap{position:relative;}
+.addr-sugg{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:6px;box-shadow:0 8px 20px rgba(0,0,0,.12);z-index:30;max-height:190px;overflow-y:auto;}
+.addr-sugg-item{padding:8px 10px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--line);}
+.addr-sugg-item:last-child{border-bottom:none;}
+.addr-sugg-item:hover{background:var(--paper);}
+
+/* ---------- Onboarding ---------- */
+.onboard-overlay{position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;justify-content:center;z-index:100;}
+
+/* ---------- Responsive ---------- */
+@media(max-width:860px){
+  .sidebar{position:fixed;bottom:0;left:0;right:0;top:auto;width:100%;height:auto;flex-direction:row;z-index:30;}
+  .sidebar-brand,.sidebar-foot{display:none;}
+  .sidebar-nav{flex-direction:row;padding:6px;}
+  .nav-btn span{display:none;}
+  .main{padding-bottom:58px;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .form-2{grid-template-columns:1fr;}
+  .content{padding:16px 14px 60px;}
+  .topbar{padding:12px 14px;}
+}
+</style>
+</head>
+<body>
+<div id="app" style="display:none;">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="mark">Diagnostics immo</div>
+      <div class="name">Suivi commercial</div>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-foot" id="sidebar-foot"></div>
+  </aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <main class="content" id="content"></main>
+  </div>
+</div>
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+<div id="onboard-root"></div>
+
+<script>
+/* ===== CONSTANTES ===== */
+const STATUTS = [
+  {key:'interesse', label:'Intéressé(e)', css:'s-interesse'},
+  {key:'non_interesse', label:'Non intéressé(e)', css:'s-non_interesse'},
+  {key:'bof_bof', label:'Bof bof', css:'s-en_pause'},
+  {key:'perdu', label:'Perdu(e)', css:'s-perdu'},
+  {key:'en_pause', label:'En pause', css:'s-en_pause'},
+];
+const TYPES = ['Agence','Syndic','Notaire','Mairie','Collectivité','Architecte','Chasseur d\'appart'];
+const INTERACTIONS = ['Appel téléphonique','Email','Physique'];
+const PAYS_LIST = ['France','Belgique','Suisse','Luxembourg','Autre'];
+const STAGES = [
+  {key:'prospect',label:'Prospect identifié',color:'#8B95A1'},
+  {key:'contact',label:'Premier contact pris',color:'#FF8A4C'},
+  {key:'rdv',label:'RDV / Présentation',color:'#FF6A1F'},
+  {key:'suivi',label:'Suivi en cours',color:'#E0A640'},
+  {key:'partenaire',label:'Partenaire actif',color:'#1B8A5A'},
+];
+const TASK_NOTE_TYPES = ['Appel','Email','Visite','Autre'];
+const TEAM_COLORS = ['#FF5A1F','#1B8A5A','#2E6FD6','#D6A019','#8B5CF6','#D6432F'];
+
+const ICONS = {
+  dash:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>`,
+  contacts:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>`,
+  planning:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><rect x="7" y="14" width="3" height="3" rx=".5"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>`,
+  tasks:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l2 2 4-4"/><rect x="3" y="3" width="18" height="18" rx="3"/></svg>`,
+  save:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,
+  team:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M14.5 14.5c2.8.3 4.5 2.5 4.5 5.5"/></svg>`,
+};
+
+/* ===== ÉTAT ===== */
+let S = {contacts:[],tasks:[],team:[],userId:null,view:'dash'};
+let addrTimer = null;
+let onboardList = [];
+
+/* ===== HELPERS ===== */
+const esc = s => s==null?'':String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const today = () => new Date().toISOString().slice(0,10);
+const fmtDate = d => { if(!d) return '—'; const dt=new Date(d+'T00:00:00'); return isNaN(dt)?'—':dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}); };
+const fmtDateShort = d => { if(!d) return ''; const dt=new Date(d+'T00:00:00'); return isNaN(dt)?'':dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}); };
+const byId = id => S.contacts.find(c=>c.id===id);
+const taskById = id => S.tasks.find(t=>t.id===id);
+const memberById = id => S.team.find(m=>m.id===id);
+const mColor = idx => TEAM_COLORS[idx%TEAM_COLORS.length];
+const statutCss = key => (STATUTS.find(s=>s.key===key)||{css:'s-default'}).css;
+const statutLabel = key => (STATUTS.find(s=>s.key===key)||{label:'—'}).label;
+
+function avatarHtml(memberId,size=26){
+  const idx=S.team.findIndex(m=>m.id===memberId);
+  const m=idx>=0?S.team[idx]:null;
+  if(!m) return `<span class="avatar" style="background:#ccc;width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;">?</span>`;
+  const init=m.nom.trim().split(/\s+/).map(p=>p[0]).slice(0,2).join('').toUpperCase();
+  return `<span class="avatar" title="${esc(m.nom)}" style="background:${mColor(idx)};width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;">${init}</span>`;
+}
+const empty = (t,s) => `<div style="text-align:center;padding:48px 20px;color:var(--muted);"><div style="font-weight:700;color:var(--text);font-size:15px;margin-bottom:4px;">${esc(t)}</div><div>${esc(s)}</div></div>`;
+
+/* ===== STORAGE ===== */
+/* ===== SUPABASE CONFIG ===== */
+const SB_URL = 'https://zuicbbzwlttccafngfhq.supabase.co';
+const SB_KEY = 'sb_publishable_Dnmm7W2qqrNTlCm13Rp1Pg_Qg4UmKbSiLMCaZ9c4lE';
+const sbHeaders = {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+
+async function sbGet(table){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${table}?select=*`,{headers:sbHeaders});
+    if(!r.ok) throw new Error(await r.text());
+    return await r.json();
+  }catch(e){console.error('sbGet',table,e);return null;}
+}
+async function sbUpsert(table,data){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${table}`,{method:'POST',headers:{...sbHeaders,'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(data)});
+    if(!r.ok) throw new Error(await r.text());
+    return true;
+  }catch(e){console.error('sbUpsert',table,e);toast('Erreur de sauvegarde','err');return false;}
+}
+async function sbDelete(table,id){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`,{method:'DELETE',headers:sbHeaders});
+    if(!r.ok) throw new Error(await r.text());
+    return true;
+  }catch(e){console.error('sbDelete',table,e);return false;}
+}
+async function sbDeleteAll(table){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${table}?id=neq.___`,{method:'DELETE',headers:sbHeaders});
+    if(!r.ok) throw new Error(await r.text());
+    return true;
+  }catch(e){console.error('sbDeleteAll',table,e);return false;}
+}
+
+const saveContacts = async () => { await sbDeleteAll('contacts'); if(S.contacts.length) await sbUpsert('contacts',S.contacts); };
+const saveTasks    = async () => { await sbDeleteAll('tasks');    if(S.tasks.length)    await sbUpsert('tasks',S.tasks); };
+const saveTeam     = async () => { await sbDeleteAll('team');     if(S.team.length)     await sbUpsert('team',S.team); };
+const saveUser     = () => localStorage.setItem('crm-userid',S.userId||'');
+
+/* ===== TOAST / MODAL ===== */
+function toast(msg,type){
+  const el=document.createElement('div');
+  el.className='toast'+(type?' '+type:'');
+  el.textContent=msg;
+  document.getElementById('toast-root').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+function escKey(e){if(e.key==='Escape')closeModal();}
+function openModal(html){
+  document.getElementById('modal-root').innerHTML=`<div class="overlay" id="ov" onclick="if(event.target.id==='ov')closeModal()"><div class="modal">${html}</div></div>`;
+  document.addEventListener('keydown',escKey);
+}
+function closeModal(){document.getElementById('modal-root').innerHTML='';document.removeEventListener('keydown',escKey);}
+
+/* ===== NAVIGATION ===== */
+function go(v){S.view=v;render();}
+function render(){
+  renderSidebar();
+  ({dash:renderDash,contacts:renderContacts,planning:renderPlanning,tasks:renderTasks,team:renderTeam,save:renderSave}[S.view]||renderDash)();
+}
+function renderSidebar(){
+  const nav=[{k:'dash',l:'Tableau de bord',i:ICONS.dash},{k:'contacts',l:'Contacts',i:ICONS.contacts},{k:'planning',l:'Planning relances',i:ICONS.planning},{k:'tasks',l:'Tâches',i:ICONS.tasks},{k:'team',l:'Équipe',i:ICONS.team},{k:'save',l:'Sauvegarde',i:ICONS.save}];
+  document.getElementById('sidebar-nav').innerHTML=nav.map(n=>`<button class="nav-btn ${S.view===n.k?'active':''}" onclick="go('${n.k}')">${n.i}<span>${n.l}</span></button>`).join('');
+  document.getElementById('sidebar-foot').innerHTML=`${S.contacts.length} contact${S.contacts.length>1?'s':''} · ${S.tasks.filter(t=>!t.done).length} tâche${S.tasks.filter(t=>!t.done).length>1?'s':''}`;
+}
+function setTopbar(title,sub,right){
+  const m=memberById(S.userId);
+  const user=`<button class="btn btn-secondary" onclick="openSwitchUser()" style="border-radius:100px;padding:4px 11px 4px 4px;">${m?avatarHtml(m.id,22):''}<span style="margin-left:4px;">${m?esc(m.nom):'—'}</span></button>`;
+  document.getElementById('topbar').innerHTML=`<div><h1>${esc(title)}</h1>${sub?`<div class="sub">${esc(sub)}</div>`:''}</div><div class="topbar-right">${right||''}${user}</div>`;
+}
+function openSwitchUser(){
+  openModal(`<div class="modal-head"><h2 style="margin:0;font-size:16px;">Changer d'utilisateur</h2><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">${S.team.map(m=>`<div style="display:flex;align-items:center;gap:10px;padding:9px;border-radius:7px;cursor:pointer;" onmouseover="this.style.background='var(--paper)'" onmouseout="this.style.background=''" onclick="switchUser('${m.id}');closeModal();">${avatarHtml(m.id,28)}<span style="font-weight:600;">${esc(m.nom)}</span>${S.userId===m.id?`<span style="margin-left:auto;font-size:11px;color:var(--good);font-weight:700;">● Vous</span>`:''}</div>`).join('')}</div>`);
+}
+function switchUser(id){S.userId=id;saveUser();render();toast('Connecté : '+memberById(id).nom,'ok');}
+
+/* ===== ADRESSE AUTOCOMPLETE ===== */
+function startAddrSearch(val){
+  clearTimeout(addrTimer);
+  const box=document.getElementById('addr-sugg');
+  if(!box)return;
+  if(!val||val.length<4){box.style.display='none';return;}
+  addrTimer=setTimeout(()=>doAddrSearch(val),450);
+}
+function hideAddrSugg(){const b=document.getElementById('addr-sugg');if(b)b.style.display='none';}
+async function doAddrSearch(val){
+  const box=document.getElementById('addr-sugg');
+  if(!box)return;
+  try{
+    const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=fr,be,ch,lu&q='+encodeURIComponent(val));
+    const data=await r.json();
+    box.innerHTML='';
+    if(!data.length){box.style.display='none';return;}
+    data.forEach(d=>{
+      const el=document.createElement('div');
+      el.className='addr-sugg-item';
+      el.textContent=d.display_name;
+      el.onmousedown=e=>{e.preventDefault();fillAddr(d);};
+      box.appendChild(el);
+    });
+    box.style.display='block';
+  }catch{box.style.display='none';}
+}
+function fillAddr(d){
+  const a=d.address||{};
+  const rue=[a.house_number,a.road].filter(Boolean).join(' ');
+  const ville=a.city||a.town||a.village||a.municipality||'';
+  const cp=a.postcode||'';
+  const pays=a.country||'France';
+  const setV=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  setV('f-adresse',rue||d.display_name);
+  setV('f-ville',ville);
+  setV('f-cp',cp);
+  setV('f-pays',pays);
+  hideAddrSugg();
+}
+function openMaps(){
+  const g=id=>((document.getElementById(id)||{}).value||'').trim();
+  const full=[g('f-adresse'),g('f-cp'),g('f-ville'),g('f-pays')].filter(Boolean).join(' ');
+  if(!full){toast('Saisissez une adresse','err');return;}
+  window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(full),'_blank');
+}
+
+/* ===== TABLEAU DE BORD ===== */
+function renderDash(){
+  const me=memberById(S.userId);
+  setTopbar('Tableau de bord',`Bonjour${me?', '+me.nom:''} — ${fmtDate(today())}`,'');
+  const inter=S.contacts.filter(c=>c.statut==='interesse').length;
+  const actif=S.contacts.filter(c=>c.statut!=='perdu'&&c.statut!=='non_interesse').length;
+  const overdue=S.tasks.filter(t=>!t.done&&t.dueDate&&t.dueDate<today()).length;
+  const relances=S.contacts.filter(c=>c.prochainContact&&c.prochainContact===today()).length;
+  const kpis=`<div class="kpi-grid">
+    <div class="kpi-card"><div class="kl">Contacts actifs</div><div class="kv">${actif}</div></div>
+    <div class="kpi-card"><div class="kl">Intéressés</div><div class="kv" style="color:var(--good)">${inter}</div></div>
+    <div class="kpi-card"><div class="kl">Tâches en retard</div><div class="kv" style="${overdue?'color:var(--danger)':''}">${overdue}</div></div>
+    <div class="kpi-card"><div class="kl">Relances du jour</div><div class="kv" style="${relances?'color:var(--accent)':''}">${relances}</div></div>
+  </div>`;
+  const rProchain=S.contacts.filter(c=>c.prochainContact&&c.prochainContact>=today()).sort((a,b)=>a.prochainContact.localeCompare(b.prochainContact)).slice(0,6);
+  const rTasks=S.tasks.filter(t=>!t.done).sort((a,b)=>(a.dueDate||'9999').localeCompare(b.dueDate||'9999')).slice(0,5);
+  document.getElementById('content').innerHTML=kpis+`<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"><div>
+    <div class="panel-title">Prochains contacts à prendre</div>
+    ${rProchain.length?rProchain.map(c=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer;" onclick="openContactModal('${c.id}')">
+      <div style="font-weight:600;">${esc(c.societe)}<span style="font-weight:400;color:var(--muted);margin-left:6px;">${esc(c.type)}</span></div>
+      <div style="font-family:var(--mono);color:var(--accent);">${fmtDateShort(c.prochainContact)}</div>
+    </div>`).join(''):empty('Aucune relance planifiée','Ajoutez une date de prochain contact dans les fiches.')}
+  </div><div>
+    <div class="panel-title">Tâches prioritaires</div>
+    ${rTasks.length?rTasks.map(t=>taskRowHtml(t)).join(''):empty('Aucune tâche en cours','')}
+  </div></div>`;
+}
+
+/* ===== CONTACTS ===== */
+let cfSearch='',cfType='all',cfStatut='all',cfPremier='all',cfProchain='all';
+
+function dateRange(filter){
+  const now=new Date(); const t=today();
+  const startOfWeek=new Date(now); startOfWeek.setDate(now.getDate()-now.getDay()+1); const sw=startOfWeek.toISOString().slice(0,10);
+  const endOfWeek=new Date(startOfWeek); endOfWeek.setDate(startOfWeek.getDate()+6); const ew=endOfWeek.toISOString().slice(0,10);
+  const startOfMonth=t.slice(0,7)+'-01';
+  const endOfMonth=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().slice(0,10);
+  const startNextMonth=new Date(now.getFullYear(),now.getMonth()+1,1).toISOString().slice(0,10);
+  const endNextMonth=new Date(now.getFullYear(),now.getMonth()+2,0).toISOString().slice(0,10);
+  const last30=new Date(now); last30.setDate(now.getDate()-30); const l30=last30.toISOString().slice(0,10);
+  const next30=new Date(now); next30.setDate(now.getDate()+30); const n30=next30.toISOString().slice(0,10);
+  switch(filter){
+    case 'today':     return [t,t];
+    case 'week':      return [sw,ew];
+    case 'month':     return [startOfMonth,endOfMonth];
+    case 'next_month':return [startNextMonth,endNextMonth];
+    case 'last30':    return [l30,t];
+    case 'next30':    return [t,n30];
+    case 'no_date':   return ['__none__','__none__'];
+    default:          return null;
+  }
+}
+
+function renderContacts(){
+  setTopbar('Contacts',`${S.contacts.length} contact${S.contacts.length>1?'s':''}`,`<button class="btn btn-primary" onclick="openContactModal()">+ Nouveau contact</button>`);
+  const bar=`<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+    <input type="text" placeholder="Rechercher..." value="${esc(cfSearch)}" oninput="cfSearch=this.value;renderContacts();" style="max-width:200px;">
+    <select onchange="cfType=this.value;renderContacts();"><option value="all">Tous les types</option>${TYPES.map(t=>`<option ${cfType===t?'selected':''}>${t}</option>`).join('')}</select>
+    <select onchange="cfStatut=this.value;renderContacts();"><option value="all">Tous les statuts</option>${STATUTS.map(s=>`<option value="${s.key}" ${cfStatut===s.key?'selected':''}>${s.label}</option>`).join('')}</select>
+    <select onchange="cfPremier=this.value;renderContacts();">
+      <option value="all">1er contact — Toutes périodes</option>
+      <option value="today"      ${cfPremier==='today'?'selected':''}>Aujourd'hui</option>
+      <option value="week"       ${cfPremier==='week'?'selected':''}>Cette semaine</option>
+      <option value="month"      ${cfPremier==='month'?'selected':''}>Ce mois-ci</option>
+      <option value="last30"     ${cfPremier==='last30'?'selected':''}>30 derniers jours</option>
+      <option value="no_date"    ${cfPremier==='no_date'?'selected':''}>Sans date renseignée</option>
+    </select>
+    <div style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:0 10px;height:38px;">
+      <span style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;">📅 Prochain contact</span>
+      <input type="date" value="${cfProchain!=='all'?esc(cfProchain):''}" onchange="cfProchain=this.value||'all';renderContacts();" style="border:none;outline:none;font-size:13px;color:var(--text);width:130px;padding:0;">
+      ${cfProchain!=='all'?`<span style="cursor:pointer;color:var(--muted);" onclick="cfProchain='all';renderContacts();">✕</span>`:''}
+    </div>
+  </div>`;
+  const rPremier=dateRange(cfPremier);
+  let list=S.contacts.filter(c=>{
+    if(cfType!=='all'&&c.type!==cfType)return false;
+    if(cfStatut!=='all'&&c.statut!==cfStatut)return false;
+    if(cfSearch){const h=(c.societe+' '+(c.contact1nom||'')+' '+(c.contact2nom||'')+' '+(c.ville||'')).toLowerCase();if(!h.includes(cfSearch.toLowerCase()))return false;}
+    if(rPremier){
+      if(rPremier[0]==='__none__'){ if(c.premierContact) return false; }
+      else{ if(!c.premierContact||c.premierContact<rPremier[0]||c.premierContact>rPremier[1]) return false; }
+    }
+    if(cfProchain!=='all'){ if((c.prochainContact||'')!==cfProchain) return false; }
+    return true;
+  }).sort((a,b)=>(a.societe||'').localeCompare(b.societe||''));
+  if(!S.contacts.length){document.getElementById('content').innerHTML=bar+empty('Aucun contact','Créez votre premier contact agence ou syndic.');return;}
+  const rows=list.map(c=>`<tr class="row" onclick="openContactModal('${c.id}')">
+    <td style="font-weight:700;">${esc(c.societe)}</td>
+    <td>${esc(c.type)||'—'}</td>
+    <td><span class="pill ${statutCss(c.statut)}">${statutLabel(c.statut)}</span></td>
+    <td>${esc(c.contact1nom)||'—'}</td>
+    <td>${esc(c.telephone)||'—'}</td>
+    <td style="font-family:var(--mono);color:${c.prochainContact&&c.prochainContact<today()?'var(--danger)':c.prochainContact===today()?'var(--accent)':'inherit'}">${fmtDateShort(c.prochainContact)||'—'}</td>
+    <td>${avatarHtml(c.assignedTo,22)}</td>
+  </tr>`).join('');
+  document.getElementById('content').innerHTML=bar+`<table class="table"><thead><tr><th>Société</th><th>Type</th><th>Statut</th><th>Contact 1</th><th>Téléphone</th><th>Prochain contact</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:28px;">Aucun résultat</td></tr>`}</tbody></table>`;
+}
+
+function openContactModal(id){
+  const ed=!!id;
+  const c=ed?byId(id):{id:uid(),societe:'',type:TYPES[0],statut:'',telephone:'',premierContact:'',prochainContact:'',
+    adresse:'',complement:'',ville:'',cp:'',pays:'France',
+    contact1nom:'',contact1fonction:'',contact1portable:'',contact1mail:'',
+    contact2nom:'',contact2fonction:'',contact2portable:'',contact2mail:'',
+    details:[],assignedTo:S.userId||(S.team[0]&&S.team[0].id)||'',stage:'prospect',createdAt:Date.now()};
+  const details=ed?(c.details||[]).slice().reverse():[];
+
+  openModal(`
+  <div class="modal-head"><h2 style="margin:0;font-size:16px;">${ed?esc(c.societe)||'Fiche contact':'Nouveau contact'}</h2><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+
+    <div class="section-label">Informations générales</div>
+    <div class="form-2">
+      <div class="field full"><label>Société</label><input type="text" id="f-societe" value="${esc(c.societe)}" placeholder="Nom de l'agence ou du syndic"></div>
+      <div class="field"><label>Type</label><select id="f-type">${TYPES.map(t=>`<option ${c.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="field"><label>Téléphone</label><input type="tel" id="f-tel" value="${esc(c.telephone)}"></div>
+      <div class="field"><label>Statut</label><select id="f-statut"><option value="">— Choisir —</option>${STATUTS.map(s=>`<option value="${s.key}" ${c.statut===s.key?'selected':''}>${s.label}</option>`).join('')}</select></div>
+      <div class="field"><label>Date de premier contact</label><input type="date" id="f-premier" value="${esc(c.premierContact||'')}"></div>
+      <div class="field"><label>Date prochain contact</label><input type="date" id="f-prochain" value="${esc(c.prochainContact||'')}"></div>
+      <div class="field"><label>Responsable</label><select id="f-assigned">${S.team.map(m=>`<option value="${m.id}" ${c.assignedTo===m.id?'selected':''}>${esc(m.nom)}</option>`).join('')}</select></div>
+    </div>
+
+    <div class="section-label">Adresse <button type="button" class="btn btn-secondary btn-sm" onclick="openMaps()" style="margin-left:8px;">🗺️ Google Maps</button></div>
+    <div class="form-2">
+      <div class="field full addr-wrap">
+        <label>Adresse</label>
+        <input type="text" id="f-adresse" value="${esc(c.adresse)}" placeholder="Numéro et rue" autocomplete="off" oninput="startAddrSearch(this.value)" onblur="setTimeout(hideAddrSugg,160)">
+        <div class="addr-sugg" id="addr-sugg"></div>
+      </div>
+      <div class="field full"><label>Complément d'adresse</label><input type="text" id="f-complement" value="${esc(c.complement)}" placeholder="Bâtiment, étage, digicode..."></div>
+      <div class="field"><label>Ville</label><input type="text" id="f-ville" value="${esc(c.ville)}"></div>
+      <div class="field"><label>Code postal</label><input type="text" id="f-cp" value="${esc(c.cp)}"></div>
+      <div class="field full"><label>Pays</label><select id="f-pays">${PAYS_LIST.map(p=>`<option ${(c.pays||'France')===p?'selected':''}>${p}</option>`).join('')}</select></div>
+    </div>
+
+    <div class="section-label">Contact 1</div>
+    <div class="form-2">
+      <div class="field"><label>Nom</label><input type="text" id="f-c1nom" value="${esc(c.contact1nom)}"></div>
+      <div class="field"><label>Fonction</label><input type="text" id="f-c1fonction" value="${esc(c.contact1fonction)}"></div>
+      <div class="field"><label>Portable</label><input type="tel" id="f-c1portable" value="${esc(c.contact1portable)}"></div>
+      <div class="field"><label>Mail</label><input type="email" id="f-c1mail" value="${esc(c.contact1mail)}"></div>
+    </div>
+
+    <div class="section-label">Contact 2</div>
+    <div class="form-2">
+      <div class="field"><label>Nom</label><input type="text" id="f-c2nom" value="${esc(c.contact2nom)}"></div>
+      <div class="field"><label>Fonction</label><input type="text" id="f-c2fonction" value="${esc(c.contact2fonction)}"></div>
+      <div class="field"><label>Portable</label><input type="tel" id="f-c2portable" value="${esc(c.contact2portable)}"></div>
+      <div class="field"><label>Mail</label><input type="email" id="f-c2mail" value="${esc(c.contact2mail)}"></div>
+    </div>
+
+    ${ed?`
+    <div class="section-label">Ajouter un détail</div>
+    <div class="form-2">
+      <div class="field"><label>Date</label><input type="date" id="f-det-date" value="${today()}"></div>
+      <div class="field"><label>Interaction</label><select id="f-det-type">${INTERACTIONS.map(i=>`<option>${i}</option>`).join('')}</select></div>
+      <div class="field full"><label>Description</label><textarea id="f-det-desc" placeholder="Ce qui s'est dit ou fait ce jour..."></textarea></div>
+    </div>
+    <button class="btn btn-secondary" onclick="addDetail('${id}')">+ Ajouter ce détail</button>
+
+    <div class="section-label">Historique (${details.length})</div>
+    <div>${details.length?details.map(d=>detailHtml(d,id)).join(''):
+      '<div style="color:var(--muted);font-size:13px;">Aucun détail enregistré</div>'}</div>`:''}
+  </div>
+  <div class="modal-foot">
+    ${ed?`<button class="btn btn-ghost" style="color:var(--danger);margin-right:auto;" onclick="deleteContact('${id}')">Supprimer</button>`:''}
+    <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+    <button class="btn btn-primary" onclick="saveContact('${ed?id:''}')">Enregistrer</button>
+  </div>`);
+}
+function detailHtml(d,contactId){
+  return `<div class="detail-item">
+    <div class="detail-meta">
+      <span>${fmtDateShort(d.date)}</span>
+      <span class="detail-badge">${esc(d.type)}</span>
+      <span style="margin-left:auto;cursor:pointer;color:var(--muted);" onclick="deleteDetail('${contactId}','${d.id}')">✕</span>
+    </div>
+    <div class="detail-desc">${esc(d.desc)}</div>
+  </div>`;
+}
+function addDetail(contactId){
+  const date=document.getElementById('f-det-date').value;
+  const type=document.getElementById('f-det-type').value;
+  const desc=document.getElementById('f-det-desc').value.trim();
+  if(!desc){toast('Écrivez une description','err');return;}
+  const c=byId(contactId);
+  if(!c)return;
+  if(!c.details)c.details=[];
+  c.details.push({id:uid(),date,type,desc,at:Date.now()});
+  saveContacts();
+  openContactModal(contactId);
+}
+function deleteDetail(contactId,detailId){
+  const c=byId(contactId);
+  if(!c)return;
+  c.details=(c.details||[]).filter(d=>d.id!==detailId);
+  saveContacts();
+  openContactModal(contactId);
+}
+function saveContact(id){
+  const societe=document.getElementById('f-societe').value.trim();
+  if(!societe){toast('Le nom de la société est obligatoire','err');return;}
+  const data={
+    societe,
+    type:document.getElementById('f-type').value,
+    statut:document.getElementById('f-statut').value,
+    telephone:document.getElementById('f-tel').value.trim(),
+    premierContact:document.getElementById('f-premier').value,
+    prochainContact:document.getElementById('f-prochain').value,
+    assignedTo:document.getElementById('f-assigned').value,
+    adresse:document.getElementById('f-adresse').value.trim(),
+    complement:document.getElementById('f-complement').value.trim(),
+    ville:document.getElementById('f-ville').value.trim(),
+    cp:document.getElementById('f-cp').value.trim(),
+    pays:document.getElementById('f-pays').value,
+    contact1nom:document.getElementById('f-c1nom').value.trim(),
+    contact1fonction:document.getElementById('f-c1fonction').value.trim(),
+    contact1portable:document.getElementById('f-c1portable').value.trim(),
+    contact1mail:document.getElementById('f-c1mail').value.trim(),
+    contact2nom:document.getElementById('f-c2nom').value.trim(),
+    contact2fonction:document.getElementById('f-c2fonction').value.trim(),
+    contact2portable:document.getElementById('f-c2portable').value.trim(),
+    contact2mail:document.getElementById('f-c2mail').value.trim(),
+    updatedAt:Date.now()
+  };
+  if(id){Object.assign(byId(id),data);}
+  else{S.contacts.push(Object.assign({id:uid(),details:[],createdAt:Date.now()},data));}
+  saveContacts();closeModal();render();toast('Contact enregistré','ok');
+}
+function deleteContact(id){
+  if(!confirm('Supprimer ce contact et tout son historique ?'))return;
+  S.contacts=S.contacts.filter(c=>c.id!==id);
+  S.tasks=S.tasks.filter(t=>!(t.linkedId===id));
+  saveContacts();saveTasks();closeModal();render();toast('Contact supprimé','ok');
+}
+
+/* ===== PIPELINE ===== */
+/* ===== PLANNING RELANCES ===== */
+let calYear=new Date().getFullYear(), calMonth=new Date().getMonth(), calSelectedDay=null;
+const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+function renderPlanning(){
+  const totalRelances=S.contacts.filter(c=>c.prochainContact).length;
+  setTopbar('Planning des relances',`${totalRelances} relance${totalRelances>1?'s':''} planifiée${totalRelances>1?'s':''}`,
+    `<button class="btn btn-secondary" onclick="openContactModal()">+ Nouveau contact</button>`);
+  buildCalendar();
+}
+
+function buildCalendar(){
+  const t=today();
+  const firstDay=new Date(calYear,calMonth,1);
+  const lastDay=new Date(calYear,calMonth+1,0);
+  const startDow=(firstDay.getDay()+6)%7; // lundi=0
+  const daysInMonth=lastDay.getDate();
+
+  // Index des relances par date
+  const byDate={};
+  S.contacts.forEach(c=>{
+    if(!c.prochainContact)return;
+    if(!byDate[c.prochainContact])byDate[c.prochainContact]=[];
+    byDate[c.prochainContact].push(c);
+  });
+
+  // Relances en retard (avant ce mois)
+  const overdueList=S.contacts.filter(c=>c.prochainContact&&c.prochainContact<`${calYear}-${String(calMonth+1).padStart(2,'0')}-01`);
+
+  // En-tête navigation
+  let html=`<div class="cal-header">
+    <button class="btn btn-secondary btn-sm" onclick="calMonth--;if(calMonth<0){calMonth=11;calYear--;}buildCalendar();">← Mois préc.</button>
+    <span class="cal-month">${MOIS[calMonth]} ${calYear}</span>
+    <button class="btn btn-secondary btn-sm" onclick="calMonth++;if(calMonth>11){calMonth=0;calYear++;}buildCalendar();">Mois suiv. →</button>
+  </div>`;
+
+  // Relances en retard
+  if(overdueList.length&&calMonth===new Date().getMonth()&&calYear===new Date().getFullYear()){
+    html+=`<div style="background:var(--danger-dim);border:1px solid #F5C0B8;border-radius:8px;padding:10px 14px;margin-bottom:14px;cursor:pointer;" onclick="toggleOverdueList()">
+      <div style="font-weight:700;font-size:13px;color:var(--danger);">⚠️ ${overdueList.length} relance${overdueList.length>1?'s':''} en retard</div>
+    </div>
+    <div id="overdue-list" style="display:none;margin-bottom:14px;">
+      ${overdueList.map(c=>`<div class="day-relance-item" onclick="openContactModal('${c.id}')">
+        <div style="flex:1;"><div style="font-weight:700;font-size:13px;">${esc(c.societe)}</div><div style="font-size:11.5px;color:var(--muted);">${esc(c.type)}${c.contact1nom?' · '+esc(c.contact1nom):''}</div></div>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--danger);font-weight:700;">${fmtDateShort(c.prochainContact)}</span>
+        ${avatarHtml(c.assignedTo,20)}
+      </div>`).join('')}
+    </div>`;
+  }
+
+  // Grille calendrier
+  html+=`<div class="cal-grid">`;
+  JOURS.forEach(j=>{ html+=`<div class="cal-day-label">${j}</div>`; });
+
+  // Cellules vides avant le 1er
+  for(let i=0;i<startDow;i++) html+=`<div class="cal-cell empty"></div>`;
+
+  // Jours du mois
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const relances=byDate[dateStr]||[];
+    const isToday=dateStr===t;
+    const isSelected=dateStr===calSelectedDay;
+    const classes=['cal-cell', isToday?'today':'', relances.length?'has-relance':'', isSelected?'selected':''].filter(Boolean).join(' ');
+    const chips=relances.slice(0,3).map(c=>`<div class="cal-chip" onclick="event.stopPropagation();openContactModal('${c.id}')">${esc(c.societe)}</div>`).join('');
+    const more=relances.length>3?`<div class="cal-more">+${relances.length-3} autre${relances.length-3>1?'s':''}</div>`:'';
+    html+=`<div class="${classes}" onclick="selectDay('${dateStr}')">
+      <div class="cal-day-num">${d}</div>
+      ${chips}${more}
+    </div>`;
+  }
+  html+=`</div>`;
+
+  // Panneau du jour sélectionné
+  if(calSelectedDay){
+    const dayRelances=byDate[calSelectedDay]||[];
+    const label=new Date(calSelectedDay+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+    html+=`<div style="margin-top:20px;">
+      <div style="font-weight:700;font-size:15px;margin-bottom:10px;text-transform:capitalize;">📅 ${label} — ${dayRelances.length} relance${dayRelances.length>1?'s':''}</div>
+      ${dayRelances.length?dayRelances.map(c=>`<div class="day-relance-item" onclick="openContactModal('${c.id}')">
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:13.5px;">${esc(c.societe)}</div>
+          <div style="font-size:12px;color:var(--muted);">${esc(c.type)}${c.contact1nom?' · '+esc(c.contact1nom):''}${c.contact1portable?' · '+esc(c.contact1portable):''}</div>
+        </div>
+        <span class="pill ${statutCss(c.statut)}">${statutLabel(c.statut)}</span>
+        ${avatarHtml(c.assignedTo,22)}
+      </div>`).join(''):`<div style="color:var(--muted);font-size:13px;padding:14px 0;">Aucune relance ce jour.</div>`}
+    </div>`;
+  }
+
+  document.getElementById('content').innerHTML=html;
+
+  // Style cellule sélectionnée
+  if(calSelectedDay){
+    document.querySelectorAll('.cal-cell').forEach(el=>{
+      if(el.onclick&&el.getAttribute('onclick')&&el.innerHTML.includes(calSelectedDay)){
+        el.style.borderColor='var(--accent)';
+      }
+    });
+  }
+}
+
+function selectDay(dateStr){
+  calSelectedDay = calSelectedDay===dateStr ? null : dateStr;
+  buildCalendar();
+}
+function toggleOverdueList(){
+  const el=document.getElementById('overdue-list');
+  if(el) el.style.display=el.style.display==='none'?'block':'none';
+}
+
+/* ===== TÂCHES ===== */
+let tAssigned='all',tStatus='all';
+function renderTasks(){
+  const open=S.tasks.filter(t=>!t.done).length;
+  setTopbar('Tâches',`${open} tâche${open>1?'s':''} en cours`,`<button class="btn btn-primary" onclick="openTaskModal()">+ Nouvelle tâche</button>`);
+  const bar=`<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+    <select onchange="tAssigned=this.value;renderTasks();"><option value="all">Toute l'équipe</option>${S.team.map(m=>`<option value="${m.id}" ${tAssigned===m.id?'selected':''}>${esc(m.nom)}</option>`).join('')}</select>
+    <select onchange="tStatus=this.value;renderTasks();">
+      <option value="all">Toutes</option>
+      <option value="over" ${tStatus==='over'?'selected':''}>En retard</option>
+      <option value="open" ${tStatus==='open'?'selected':''}>À faire</option>
+      <option value="done" ${tStatus==='done'?'selected':''}>Terminées</option>
+    </select>
+  </div>`;
+  let list=S.tasks.filter(t=>{
+    if(tAssigned!=='all'&&t.assignedTo!==tAssigned)return false;
+    if(tStatus==='over'&&!(!t.done&&t.dueDate&&t.dueDate<today()))return false;
+    if(tStatus==='open'&&t.done)return false;
+    if(tStatus==='done'&&!t.done)return false;
+    return true;
+  }).sort((a,b)=>(a.dueDate||'9999').localeCompare(b.dueDate||'9999'));
+  document.getElementById('content').innerHTML=bar+(list.length?list.map(t=>taskRowHtml(t)).join(''):empty('Aucune tâche',''));
+}
+function taskRowHtml(t){
+  const due=t.dueDate||'';
+  let dc='soon',dl=due?fmtDateShort(due):'Sans échéance';
+  if(due&&due<today()&&!t.done)dc='over';
+  else if(due===today()&&!t.done)dc='today';
+  const target=t.linkedId?byId(t.linkedId):null;
+  return `<div class="task-row ${t.done?'done':''}">
+    <input type="checkbox" class="t-cb" ${t.done?'checked':''} onchange="toggleTask('${t.id}')">
+    <div class="t-title" style="cursor:pointer;" onclick="openTaskModal('${t.id}')">${esc(t.titre)}${target?` <span style="color:var(--muted);font-weight:400;">— ${esc(target.societe)}</span>`:''}</div>
+    ${avatarHtml(t.assignedTo,20)}
+    <span class="t-due ${dc}">${esc(dl)}</span>
+    <button class="btn btn-ghost btn-sm" onclick="deleteTask('${t.id}')">✕</button>
+  </div>`;
+}
+function openTaskModal(id,preContactId){
+  const ed=!!id;
+  const t=ed?taskById(id):{id:uid(),titre:'',dueDate:'',assignedTo:S.userId||(S.team[0]&&S.team[0].id)||'',linkedId:preContactId||'',done:false};
+  openModal(`
+    <div class="modal-head"><h2 style="margin:0;font-size:16px;">${ed?'Modifier la tâche':'Nouvelle tâche'}</h2><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Titre</label><input type="text" id="f-titre" value="${esc(t.titre)}" placeholder="Ex : Relancer pour partenariat"></div>
+      <div class="form-2">
+        <div class="field"><label>Échéance</label><input type="date" id="f-due" value="${esc(t.dueDate||'')}"></div>
+        <div class="field"><label>Assigné à</label><select id="f-assigned">${S.team.map(m=>`<option value="${m.id}" ${t.assignedTo===m.id?'selected':''}>${esc(m.nom)}</option>`).join('')}</select></div>
+        <div class="field full"><label>Lier à un contact</label><select id="f-linked"><option value="">Aucun</option>${S.contacts.map(c=>`<option value="${c.id}" ${t.linkedId===c.id?'selected':''}>${esc(c.societe)}</option>`).join('')}</select></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      ${ed?`<button class="btn btn-ghost" style="color:var(--danger);margin-right:auto;" onclick="deleteTask('${id}');closeModal();">Supprimer</button>`:''}
+      <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveTask('${ed?id:''}')">Enregistrer</button>
+    </div>`);
+}
+function saveTask(id){
+  const titre=document.getElementById('f-titre').value.trim();
+  if(!titre){toast('Le titre est obligatoire','err');return;}
+  const data={titre,dueDate:document.getElementById('f-due').value,assignedTo:document.getElementById('f-assigned').value,linkedId:document.getElementById('f-linked').value};
+  if(id){Object.assign(taskById(id),data);}
+  else{S.tasks.push(Object.assign({id:uid(),done:false,createdAt:Date.now()},data));}
+  saveTasks();closeModal();render();toast('Tâche enregistrée','ok');
+}
+function toggleTask(id){const t=taskById(id);t.done=!t.done;saveTasks();render();}
+function deleteTask(id){S.tasks=S.tasks.filter(x=>x.id!==id);saveTasks();render();}
+
+/* ===== ÉQUIPE ===== */
+function renderTeam(){
+  setTopbar('Équipe',`${S.team.length} membre${S.team.length>1?'s':''}`, '');
+  const rows=S.team.map(m=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:7px;margin-bottom:7px;">
+    ${avatarHtml(m.id,30)}<div style="flex:1;font-weight:600;">${esc(m.nom)}</div>
+    ${S.userId===m.id?`<span class="pill" style="background:var(--good-dim);color:var(--good);">Vous</span>`:`<button class="btn btn-secondary btn-sm" onclick="switchUser('${m.id}')">Se connecter</button>`}
+    <button class="btn btn-ghost" onclick="removeMember('${m.id}')">✕</button>
+  </div>`).join('');
+  document.getElementById('content').innerHTML=`<div style="max-width:480px;">
+    <div style="margin-bottom:18px;">${rows}</div>
+    <div style="display:flex;gap:8px;margin-bottom:28px;">
+      <input type="text" id="f-newmember" placeholder="Nom du nouveau membre" style="flex:1;" onkeydown="if(event.key==='Enter')addMember();">
+      <button class="btn btn-primary" onclick="addMember()">Ajouter</button>
+    </div>
+    <div style="border-top:1px solid var(--line);padding-top:16px;">
+      <button class="btn btn-secondary" style="color:var(--danger);border-color:var(--danger-dim);" onclick="resetData()">Réinitialiser toutes les données</button>
+    </div>
+  </div>`;
+}
+
+function renderSave(){
+  setTopbar('Sauvegarde', 'Exportez et restaurez votre base de données', '');
+  const nbContacts=S.contacts.length;
+  const nbTasks=S.tasks.length;
+  const lastExport=localStorage.getItem('crm-last-export')||'Jamais effectuée';
+  document.getElementById('content').innerHTML=`<div style="max-width:540px;">
+
+    <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px;margin-bottom:18px;">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">⬇️ Exporter la base</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:18px;">Téléchargez un fichier JSON contenant tous vos contacts, tâches et membres. Conservez-le sur votre ordinateur ou un Google Drive partagé.</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--paper);border-radius:8px;padding:14px 16px;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:13.5px;font-weight:600;">${nbContacts} contact${nbContacts>1?'s':''} · ${nbTasks} tâche${nbTasks>1?'s':''} · ${S.team.length} membre${S.team.length>1?'s':''}</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">Dernière exportation : <strong>${lastExport}</strong></div>
+        </div>
+        <button class="btn btn-primary" onclick="exportData()">⬇️ Télécharger (.json)</button>
+      </div>
+      <div style="font-size:11.5px;color:var(--muted);">💡 Conseil : exportez régulièrement, surtout après des saisies importantes.</div>
+    </div>
+
+    <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px;">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">⬆️ Restaurer depuis un fichier</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:18px;">Sélectionnez un fichier JSON exporté depuis ce CRM. Un aperçu vous sera présenté avant de confirmer.</div>
+      <div style="background:var(--paper);border:1px dashed #C7CDC9;border-radius:8px;padding:18px;text-align:center;margin-bottom:14px;">
+        <input type="file" id="f-import" accept=".json" onchange="previewImport(this)" style="font-size:13px;cursor:pointer;">
+      </div>
+      <div id="import-preview" style="margin-bottom:12px;font-size:13px;"></div>
+      <button class="btn btn-secondary" id="btn-import" onclick="importData()" disabled style="width:100%;">⬆️ Importer et restaurer</button>
+      <div style="margin-top:10px;font-size:11.5px;color:var(--danger);">⚠️ L'importation remplace toutes les données actuelles. Faites un export avant si nécessaire.</div>
+    </div>
+  </div>`;
+}
+
+function exportData(){
+  const payload={
+    version:1,
+    exportedAt:new Date().toISOString(),
+    exportedBy:memberById(S.userId)?.nom||'Équipe',
+    contacts:S.contacts,
+    tasks:S.tasks,
+    team:S.team
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const d=new Date();
+  const dateStr=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  a.href=url; a.download=`CRM-DiagImmo-${dateStr}.json`; a.click();
+  URL.revokeObjectURL(url);
+  localStorage.setItem('crm-last-export',new Date().toLocaleString('fr-FR'));
+  toast('Export téléchargé avec succès','ok');
+  renderTeam();
+}
+
+let importPayload=null;
+function previewImport(input){
+  const file=input.files[0];
+  const preview=document.getElementById('import-preview');
+  const btn=document.getElementById('btn-import');
+  importPayload=null; btn.disabled=true; preview.innerHTML='';
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.contacts||!Array.isArray(data.contacts)) throw new Error('Format invalide');
+      importPayload=data;
+      btn.disabled=false;
+      const d=data.exportedAt?new Date(data.exportedAt).toLocaleString('fr-FR'):'date inconnue';
+      preview.innerHTML=`<span style="color:var(--good);font-weight:600;">✓ Fichier valide</span> — ${data.contacts.length} contact${data.contacts.length>1?'s':''}, ${(data.tasks||[]).length} tâche${(data.tasks||[]).length>1?'s':''} · exporté le ${d}`;
+    }catch{
+      preview.innerHTML=`<span style="color:var(--danger);font-weight:600;">✗ Fichier invalide</span> — Utilisez uniquement un fichier exporté depuis ce CRM.`;
+    }
+  };
+  reader.readAsText(file);
+}
+async function importData(){
+  if(!importPayload)return;
+  const nb=importPayload.contacts.length;
+  if(!confirm(`Importer ${nb} contact${nb>1?'s':''} et ${(importPayload.tasks||[]).length} tâche${(importPayload.tasks||[]).length>1?'s':''} ?\n\nAtention : cela remplacera toutes les données actuelles.`))return;
+  S.contacts=importPayload.contacts;
+  S.tasks=importPayload.tasks||[];
+  if(importPayload.team&&importPayload.team.length) S.team=importPayload.team;
+  await saveContacts(); await saveTasks(); await saveTeam();
+  importPayload=null;
+  render(); toast(`Import réussi — ${nb} contact${nb>1?'s':''} restauré${nb>1?'s':''}`, 'ok');
+}
+
+function addMember(){
+  const inp=document.getElementById('f-newmember');
+  const nom=inp.value.trim();
+  if(!nom)return;
+  const m={id:uid(),nom};
+  S.team.push(m);
+  if(!S.userId){S.userId=m.id;saveUser();}
+  saveTeam();inp.value='';renderTeam();
+}
+function removeMember(id){
+  if(S.team.length<=1){toast("Gardez au moins un membre",'err');return;}
+  if(!confirm("Retirer ce membre ?"))return;
+  S.team=S.team.filter(m=>m.id!==id);
+  if(S.userId===id){S.userId=S.team[0].id;saveUser();}
+  saveTeam();render();
+}
+function resetData(){
+  if(!confirm("Supprimer tous les contacts et tâches ? Cette action est irréversible."))return;
+  S.contacts=[];S.tasks=[];
+  saveContacts();saveTasks();render();toast('Données réinitialisées','ok');
+}
+
+/* ===== ONBOARDING ===== */
+function showOnboarding(){
+  document.getElementById('onboard-root').innerHTML=`<div class="onboard-overlay">
+    <div class="modal" style="max-width:440px;">
+      <div class="modal-head"><h2 style="margin:0;font-size:17px;">Bienvenue 👋</h2></div>
+      <div class="modal-body">
+        <p style="color:var(--muted);font-size:13.5px;margin-top:0;">Ajoutez les membres de votre équipe pour démarrer. Vous pourrez en ajouter d'autres plus tard.</p>
+        <div id="ob-list" style="margin-bottom:12px;"></div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="ob-input" placeholder="Prénom Nom" style="flex:1;" onkeydown="if(event.key==='Enter')obAdd();">
+          <button class="btn btn-secondary" onclick="obAdd()">Ajouter</button>
+        </div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-primary" id="ob-start" disabled onclick="obFinish()">Commencer →</button></div>
+    </div>
+  </div>`;
+}
+function obAdd(){
+  const inp=document.getElementById('ob-input');
+  const nom=inp.value.trim();if(!nom)return;
+  onboardList.push({id:uid(),nom});inp.value='';obRender();
+}
+function obRender(){
+  document.getElementById('ob-list').innerHTML=onboardList.map(m=>`<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13.5px;">${esc(m.nom)}<span style="cursor:pointer;color:var(--muted);" onclick="onboardList=onboardList.filter(x=>x.id!=='${m.id}');obRender();">✕</span></div>`).join('');
+  document.getElementById('ob-start').disabled=onboardList.length===0;
+}
+async function obFinish(){
+  S.team=onboardList;S.userId=onboardList[0].id;
+  await saveTeam();
+  saveUser();
+  document.getElementById('onboard-root').innerHTML='';
+  document.getElementById('app').style.display='flex';
+  go('dash');
+}
+
+/* ===== INIT ===== */
+async function init(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('onboard-root').innerHTML=`<div class="onboard-overlay"><div style="text-align:center;color:var(--muted);"><div style="font-size:18px;margin-bottom:8px;">⏳</div>Connexion à la base de données...</div></div>`;
+  try{
+    const [contacts,tasks,team]=await Promise.all([sbGet('contacts'),sbGet('tasks'),sbGet('team')]);
+    S.contacts=contacts||[]; S.tasks=tasks||[]; S.team=team||[];
+    S.userId=localStorage.getItem('crm-userid')||(S.team[0]&&S.team[0].id)||null;
+  }catch(e){
+    console.error(e); toast('Erreur de connexion à Supabase','err');
+  }
+  document.getElementById('onboard-root').innerHTML='';
+  if(!S.team.length){showOnboarding();}
+  else{document.getElementById('app').style.display='flex';go('dash');}
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
