@@ -1,0 +1,38 @@
+name: Sauvegarde quotidienne du CRM
+
+on:
+  schedule:
+    - cron: '30 5 * * *'   # tous les jours (~7h heure de Paris)
+  workflow_dispatch:        # permet aussi de lancer à la main
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Télécharger les données depuis Supabase
+        run: |
+          URL="https://zuicbbzwlttccafngfhq.supabase.co/rest/v1"
+          KEY="sb_publishable_Dnmm7W2qqrNTlCm13Rp1Pg_Qg4UmdCM"
+          for t in contacts tasks team; do
+            curl -fsS "$URL/$t?select=*" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -o $t.json
+          done
+          python3 - <<'PY'
+          import json,datetime
+          d=lambda t:[r['data'] for r in json.load(open(t+'.json'))]
+          out={"version":1,"exportedAt":datetime.datetime.utcnow().isoformat()+"Z","exportedBy":"sauvegarde-auto","contacts":d('contacts'),"tasks":d('tasks'),"team":d('team')}
+          json.dump(out,open('CRM-Keleta-sauvegarde.json','w'),ensure_ascii=False,indent=1)
+          print(len(out['contacts']),'contacts')
+          PY
+      - name: Envoyer par mail
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USER }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: Sauvegarde CRM Keleta
+          to: ${{ secrets.MAIL_USER }}
+          from: CRM Keleta
+          body: Sauvegarde quotidienne du CRM en pièce jointe. À importer via l'onglet Sauvegarde en cas de besoin.
+          attachments: CRM-Keleta-sauvegarde.json
