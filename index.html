@@ -280,18 +280,18 @@ async function sbDeleteAll(table){
   }catch(e){console.error('sbDeleteAll',table,e);return false;}
 }
 
-const saveContacts = async () => {
-  await sbDeleteAll('contacts');
-  if(S.contacts.length) await sbUpsert('contacts', S.contacts.map(c=>({id:c.id, data:c})));
-};
-const saveTasks = async () => {
-  await sbDeleteAll('tasks');
-  if(S.tasks.length) await sbUpsert('tasks', S.tasks.map(t=>({id:t.id, data:t})));
-};
-const saveTeam = async () => {
-  await sbDeleteAll('team');
-  if(S.team.length) await sbUpsert('team', S.team.map(m=>({id:m.id, data:m})));
-};
+let DB_OK=false; const KNOWN={contacts:new Set(),tasks:new Set(),team:new Set()};
+async function syncTable(table,arr){
+  if(!DB_OK){toast('Base non chargée : sauvegarde bloquée par sécurité','err');return;}
+  const ok=await sbUpsert(table,arr.map(x=>({id:x.id,data:x})));
+  if(!ok) return;
+  const cur=new Set(arr.map(x=>x.id));
+  for(const id of [...KNOWN[table]]){ if(!cur.has(id)){ if(await sbDelete(table,id)) KNOWN[table].delete(id); } }
+  cur.forEach(id=>KNOWN[table].add(id));
+}
+const saveContacts = ()=>syncTable('contacts',S.contacts);
+const saveTasks = ()=>syncTable('tasks',S.tasks);
+const saveTeam = ()=>syncTable('team',S.team);
 const saveUser = () => localStorage.setItem('crm-userid', S.userId||'');
 
 /* ===== TOAST / MODAL ===== */
@@ -963,15 +963,15 @@ async function obFinish(){
 async function init(){
   document.getElementById('app').style.display='none';
   document.getElementById('onboard-root').innerHTML=`<div class="onboard-overlay"><div style="text-align:center;color:var(--muted);"><div style="font-size:18px;margin-bottom:8px;">⏳</div>Connexion à la base de données...</div></div>`;
-  try{
-    const [contacts,tasks,team]=await Promise.all([sbGet('contacts'),sbGet('tasks'),sbGet('team')]);
-    S.contacts=(contacts||[]).map(r=>r.data);
-    S.tasks=(tasks||[]).map(r=>r.data);
-    S.team=(team||[]).map(r=>r.data);
-    S.userId=localStorage.getItem('crm-userid')||(S.team[0]&&S.team[0].id)||null;
-  }catch(e){
-    console.error(e); toast('Erreur de connexion à Supabase','err');
+  const [contacts,tasks,team]=await Promise.all([sbGet('contacts'),sbGet('tasks'),sbGet('team')]);
+  if(contacts===null||tasks===null||team===null){
+    document.getElementById('onboard-root').innerHTML=`<div class="onboard-overlay"><div style="text-align:center;max-width:420px;padding:20px;"><div style="font-size:28px;margin-bottom:8px;">⚠️</div><b>Impossible de joindre la base de données.</b><p style="color:var(--muted);margin:10px 0 16px;">Vos données ne sont pas perdues. Le projet Supabase est peut-être en pause : ouvrez supabase.com/dashboard, puis cliquez sur « Restore project ». Rien n'a été modifié.</p><button class="btn" onclick="location.reload()">Réessayer</button></div></div>`;
+    return;
   }
+  DB_OK=true;
+  S.contacts=contacts.map(r=>r.data); S.tasks=tasks.map(r=>r.data); S.team=team.map(r=>r.data);
+  contacts.forEach(r=>KNOWN.contacts.add(r.id)); tasks.forEach(r=>KNOWN.tasks.add(r.id)); team.forEach(r=>KNOWN.team.add(r.id));
+  S.userId=localStorage.getItem('crm-userid')||(S.team[0]&&S.team[0].id)||null;
   document.getElementById('onboard-root').innerHTML='';
   if(!S.team.length){showOnboarding();}
   else{document.getElementById('app').style.display='flex';go('dash');}
